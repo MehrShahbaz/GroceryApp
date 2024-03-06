@@ -5,6 +5,7 @@ const Manufacturer = sequelize.define('Manufacturer', {
   name: {
     type: DataTypes.STRING,
     allowNull: false,
+    unique: true,
   },
 });
 

@@ -1,13 +1,20 @@
+import { responseCodes } from '../helpers/responseCodes.js';
+import { notFoundError } from '../helpers/errorMessages.js';
+
 import Manufacturer from '../models/manufacturer.js';
 
 // Create a new manufacturer
 export const createManufacturer = async (req, res) => {
   try {
     const { name } = req.body;
-    const manufacturer = await Manufacturer.create({ name });
-    res.status(201).json(manufacturer);
+    if (findByName(name)) {
+      res.status(responseCodes.Conflict).json({ error: duplicateError('Name') });
+    } else {
+      const manufacturer = await Manufacturer.create({ name });
+      res.status(responseCodes.Created).json(manufacturer);
+    }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 
@@ -15,9 +22,9 @@ export const createManufacturer = async (req, res) => {
 export const getAllManufacturers = async (_req, res) => {
   try {
     const manufacturers = await Manufacturer.findAll();
-    res.status(200).json(manufacturers);
+    res.status(responseCodes.Ok).json(manufacturers);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 
@@ -25,13 +32,13 @@ export const getAllManufacturers = async (_req, res) => {
 export const getManufacturerById = async (req, res) => {
   try {
     const { id } = req.params;
-    const manufacturer = await Manufacturer.findByPk(id);
+    const manufacturer = findById(id);
     if (!manufacturer) {
-      return res.status(404).json({ message: 'Manufacturer not found' });
+      return res.status(responseCodes.NotFound).json({ message: notFoundError('Category') });
     }
-    res.status(200).json(manufacturer);
+    res.status(responseCodes.Ok).json(manufacturer);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 
@@ -40,14 +47,17 @@ export const updateManufacturer = async (req, res) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
-    const manufacturer = await Manufacturer.findByPk(id);
+    const manufacturer = findById(id);
     if (!manufacturer) {
-      return res.status(404).json({ message: 'Manufacturer not found' });
+      return res.status(responseCodes.NotFound).json({ message: notFoundError('Manufacturer') });
+    } else if (findByName(name)) {
+      res.status(responseCodes.Conflict).json({ error: duplicateError('Name') });
+    } else {
+      await manufacturer.update({ name });
+      res.status(responseCodes.Ok).json(manufacturer);
     }
-    await manufacturer.update({ name });
-    res.status(200).json(manufacturer);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 
@@ -55,13 +65,22 @@ export const updateManufacturer = async (req, res) => {
 export const deleteManufacturer = async (req, res) => {
   try {
     const { id } = req.params;
-    const manufacturer = await Manufacturer.findByPk(id);
+    const manufacturer = findById(id);
     if (!manufacturer) {
-      return res.status(404).json({ message: 'Manufacturer not found' });
+      return res.status(responseCodes.NotFound).json({ message: notFoundError('Manufacturer') });
     }
     await manufacturer.destroy();
-    res.status(204).send();
+    res.status(responseCodes.NoContent).send();
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
+
+const findByName = async (manufacturerName = '') =>
+  await Manufacturer.findOne({
+    where: {
+      name: manufacturerName,
+    },
+  });
+
+const findById = async (id) => await Manufacturer.findByPk(id);
