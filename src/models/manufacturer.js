@@ -1,12 +1,13 @@
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/config.js';
+import mongoose from 'mongoose';
 
-const Manufacturer = sequelize.define('Manufacturer', {
+const manufacturerSchema = new mongoose.Schema({
   name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
     unique: true,
+    required: true,
   },
 });
+
+const Manufacturer = mongoose.model('Manufacturer', manufacturerSchema);
 
 export default Manufacturer;

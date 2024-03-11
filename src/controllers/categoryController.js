@@ -7,12 +7,8 @@ import Category from '../models/category.js';
 export const createCategory = async (req, res) => {
   try {
     const { name } = req.body;
-    if (findByName(name)) {
-      res.status(responseCodes.Conflict).json({ error: duplicateError('Name') });
-    } else {
-      const category = await Category.create({ name });
-      res.status(responseCodes.Created).json(category);
-    }
+    const category = await Category.create({ name });
+    res.status(responseCodes.Created).json(category);
   } catch (error) {
     res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
@@ -21,8 +17,8 @@ export const createCategory = async (req, res) => {
 // Get all categories
 export const getCategories = async (_req, res) => {
   try {
-    const categories = await Category.findAll();
-    res.status(responseCodes.Ok).json(categories);
+    const categories = await Category.find();
+    res.status(responseCodes.Ok).json({ categories });
   } catch (error) {
     res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
@@ -32,10 +28,8 @@ export const getCategories = async (_req, res) => {
 export const getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!findById(id)) {
-      return res.status(404).json({ message: notFoundError('Category') });
-    }
-    res.status(responseCodes.Ok).json(category);
+
+    Category.findById(id).then((resp) => res.status(responseCodes.Ok).json({ category: resp }));
   } catch (error) {
     res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
@@ -46,14 +40,13 @@ export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
-    if (!findById(id)) {
-      return res.status(404).json({ message: notFoundError('Category') });
-    } else if (findByName(name)) {
-      res.status(responseCodes.Conflict).json({ error: duplicateError('Name') });
-    } else {
-      await category.update({ name });
-      res.status(responseCodes.Ok).json(category);
+
+    const category = await Category.findByIdAndUpdate(id, { name }, { new: true });
+    if (!category) {
+      return res.status(responseCodes.NotFound).json({ error: 'Category not found.' });
     }
+
+    res.status(responseCodes.Ok).json({ category });
   } catch (error) {
     res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
@@ -63,22 +56,12 @@ export const updateCategory = async (req, res) => {
 export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const category = await Category.findByPk(id);
-    if (!category) {
-      return res.status(404).json({ message: notFoundError('Category') });
-    }
-    await category.destroy();
+    await Category.deleteOne({ _id: id });
+
     res.status(204).send();
   } catch (error) {
     res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 
-const findByName = async (categoryName = '') =>
-  await Category.findOne({
-    where: {
-      name: categoryName,
-    },
-  });
 
-const findById = async (id) => await Category.findByPk(id);
