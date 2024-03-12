@@ -7,8 +7,8 @@ dotenv.config();
 
 import manufacturerRoutes from './routes/manufacturerRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
-// import productRoutes from './routes/productRoutes.js';
-// import storeRoutes from './routes/storeRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import storeRoutes from './routes/storeRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -19,8 +19,8 @@ app.use(express.json());
 // Routes
 app.use('/api', manufacturerRoutes);
 app.use('/api', categoryRoutes);
-// app.use('/api', productRoutes);
-// app.use('/api', storeRoutes);
+app.use('/api', productRoutes);
+app.use('/api', storeRoutes);
 
 const start = async () => {
   try {

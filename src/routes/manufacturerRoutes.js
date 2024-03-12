@@ -10,10 +10,10 @@ import {
 
 const router = express.Router();
 
-router.post('/manufacturers', createManufacturer);
+router.post('/manufacturer', createManufacturer);
 router.get('/manufacturers', getAllManufacturers);
-router.get('/manufacturers/:id', getManufacturerById);
-router.put('/manufacturers/:id', updateManufacturer);
-router.delete('/manufacturers/:id', deleteManufacturer);
+router.get('/manufacturer/:id', getManufacturerById);
+router.put('/manufacturer/:id', updateManufacturer);
+router.delete('/manufacturer/:id', deleteManufacturer);
 
 export default router;

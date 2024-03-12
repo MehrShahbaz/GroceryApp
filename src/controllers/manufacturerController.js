@@ -13,7 +13,7 @@ export const createManufacturer = async (req, res) => {
   }
 };
 
-// Get all categories
+// Get all Manufacturers
 export const getAllManufacturers = async (_req, res) => {
   try {
     const manufacturers = await Manufacturer.find();
