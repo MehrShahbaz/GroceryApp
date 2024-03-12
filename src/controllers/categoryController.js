@@ -1,3 +1,6 @@
+import { responseCodes } from '../helpers/responseCodes.js';
+import { duplicateError, notFoundError } from '../helpers/errorMessages.js';
+
 import Category from '../models/category.js';
 
 // Create a new category
@@ -5,19 +8,19 @@ export const createCategory = async (req, res) => {
   try {
     const { name } = req.body;
     const category = await Category.create({ name });
-    res.status(201).json(category);
+    res.status(responseCodes.Created).json(category);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 
 // Get all categories
 export const getCategories = async (_req, res) => {
   try {
-    const categories = await Category.findAll();
-    res.status(200).json(categories);
+    const categories = await Category.find();
+    res.status(responseCodes.Ok).json({ categories });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 
@@ -25,13 +28,10 @@ export const getCategories = async (_req, res) => {
 export const getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
-    const category = await Category.findByPk(id);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-    res.status(200).json(category);
+
+    Category.findById(id).then((resp) => res.status(responseCodes.Ok).json({ category: resp }));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 
@@ -40,14 +40,15 @@ export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
-    const category = await Category.findByPk(id);
+
+    const category = await Category.findByIdAndUpdate(id, { name }, { new: true });
     if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+      return res.status(responseCodes.NotFound).json({ error: 'Category not found.' });
     }
-    await category.update({ name });
-    res.status(200).json(category);
+
+    res.status(responseCodes.Ok).json({ category });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 
@@ -55,13 +56,12 @@ export const updateCategory = async (req, res) => {
 export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const category = await Category.findByPk(id);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-    await category.destroy();
+    await Category.deleteOne({ _id: id });
+
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
+
+
