@@ -18,9 +18,9 @@ export const createCategory = async (req, res) => {
 export const getCategories = async (_req, res) => {
   try {
     const categories = await Category.find();
-    res.status(responseCodes.Ok).json({ categories });
+    return res.status(200).json({ categories: categories || [] });
   } catch (error) {
-    res.status(responseCodes.InternalServerError).json({ error: error.message });
+    return res.status(responseCodes.InternalServerError).json({ error: error.message });
   }
 };
 

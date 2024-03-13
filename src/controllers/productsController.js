@@ -4,37 +4,46 @@ import { responseCodes } from '../helpers/responseCodes.js';
 import Product from '../models/products.js';
 import Category from '../models/category.js';
 import Manufacturer from '../models/manufacturer.js';
+import Store from '../models/store.js';
 
 // Create a new product
 export const createProduct = async (req, res) => {
   try {
-    const { name, manufacturerId, categoryId } = req.body;
+    const { name, manufacturer, category, store, price } = req.body;
 
-    if (!name || !manufacturerId || !categoryId) {
+    if (!name || !manufacturer || !category || !store) {
       return res.status(responseCodes.BadRequest).json({ error: 'Missing required fields.' });
     }
 
-    const manufacturer = await Manufacturer.findById(manufacturerId);
-    if (!manufacturer) {
+    const currentManufacturer = await Manufacturer.findById(manufacturer);
+    if (!currentManufacturer) {
       return res.status(responseCodes.NotFound).json({ error: 'Manufacturer not found.' });
     }
 
-    const category = await Category.findById(categoryId);
-    if (!category) {
+    const currentCategory = await Category.findById(category);
+    if (!currentCategory) {
       return res.status(responseCodes.NotFound).json({ error: 'Category not found.' });
     }
 
-    const product = await Product.create({ name, manufacturerId, categoryId });
+    const currentStore = await Store.findById(store);
+    if (!currentStore) {
+      return res.status(responseCodes.NotFound).json({ error: 'Category not found.' });
+    }
 
-    category.products.push(product._id);
-    manufacturer.products.push(product._id);
+    const product = await Product.create({ name, manufacturer, category, store, price });
+
+    currentCategory.products.push(product._id);
+    currentManufacturer.products.push(product._id);
+    currentStore.products.push(product._id);
 
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      await category.save({ session });
-      await manufacturer.save({ session });
+      await currentCategory.save({ session });
+      await currentManufacturer.save({ session });
+      await currentStore.save({ session });
+
       await session.commitTransaction();
       session.endSession();
 
@@ -76,50 +85,53 @@ export const getProductById = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, manufacturerId, categoryId } = req.body;
+    const { name, manufacturer, category, store, price } = req.body;
 
-    // Input Validation
-    if (!name || !manufacturerId || !categoryId) {
+    if (!name || !manufacturer || !category || !store) {
       return res.status(responseCodes.BadRequest).json({ error: 'Missing required fields.' });
     }
 
-    // Check if the manufacturer exists
-    const manufacturer = await Manufacturer.findById(manufacturerId);
-    if (!manufacturer) {
+    const currentManufacturer = await Manufacturer.findById(manufacturer);
+    if (!currentManufacturer) {
       return res.status(responseCodes.NotFound).json({ error: 'Manufacturer not found.' });
     }
 
-    // Check if the category exists
-    const category = await Category.findById(categoryId);
-    if (!category) {
+    const currentCategory = await Category.findById(category);
+    if (!currentCategory) {
       return res.status(responseCodes.NotFound).json({ error: 'Category not found.' });
     }
 
-    // Find and update the product
-    const product = await Product.findByIdAndUpdate(id, { name, manufacturerId, categoryId }, { new: true });
-    if (!product) {
-      return res.status(responseCodes.NotFound).json({ error: 'Product not found.' });
+    const currentStore = await Store.findById(store);
+    if (!currentStore) {
+      return res.status(responseCodes.NotFound).json({ error: 'Category not found.' });
     }
 
-    // Update category and manufacturer with product ID
-    category.products.push(product._id);
-    manufacturer.products.push(product._id);
+    const product = await Product.findByIdAndUpdate(id, { name, manufacturer, category, store, price }, { new: true });
 
-    // Use a transaction to ensure data consistency
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    if (product) {
+      currentCategory.products.push(product._id);
+      currentManufacturer.products.push(product._id);
+      currentStore.products.push(product._id);
 
-    try {
-      await category.save({ session });
-      await manufacturer.save({ session });
-      await session.commitTransaction();
-      session.endSession();
+      const session = await mongoose.startSession();
+      session.startTransaction();
 
-      res.status(responseCodes.Ok).json(product);
-    } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
-      throw error;
+      try {
+        await currentCategory.save({ session });
+        await currentManufacturer.save({ session });
+        await currentStore.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(responseCodes.Ok).json(product);
+      } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+      }
+    } else {
+      return res.status(responseCodes.NotFound).json({ message: notFoundError('Product') });
     }
   } catch (error) {
     res.status(responseCodes.InternalServerError).json({ error: error.message });
@@ -142,8 +154,9 @@ export const deleteProduct = async (req, res) => {
 
     try {
       // Remove the product from its associated category and manufacturer
-      await Category.findByIdAndUpdate(product.categoryId, { $pull: { products: product._id } }, { session });
-      await Manufacturer.findByIdAndUpdate(product.manufacturerId, { $pull: { products: product._id } }, { session });
+      await Category.findByIdAndUpdate(product.category, { $pull: { products: product._id } }, { session });
+      await Manufacturer.findByIdAndUpdate(product.manufacturer, { $pull: { products: product._id } }, { session });
+      await Store.findByIdAndUpdate(product.store, { $pull: { products: product._id } }, { session });
 
       // Delete the product
       await product.deleteOne({ session });
