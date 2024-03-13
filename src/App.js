@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import cors from 'cors'; // Import cors middleware
 
 mongoose.set('strictQuery', false);
 dotenv.config();
@@ -15,6 +16,7 @@ const PORT = process.env.PORT || 4000;
 const CONNECTION = process.env.DBCONNECTION || '';
 
 app.use(express.json());
+app.use(cors());
 
 // Routes
 app.use('/api', manufacturerRoutes);

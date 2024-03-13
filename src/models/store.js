@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
 const storeSchema = new mongoose.Schema({
   name: {
@@ -11,6 +11,7 @@ const storeSchema = new mongoose.Schema({
     unique: true,
     required: true,
   },
+  products: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
   createdAt: {
     type: Date,
     default: Date.now,
